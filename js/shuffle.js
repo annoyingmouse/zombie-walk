@@ -21,17 +21,13 @@ class Zombie {
 (() => {
   const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
   const zombies = []
-  const zombiesNum = 10
+  const zombiesNum = 120
   const xs = []
-  while(xs.length < zombiesNum){
-    const x = getRandomInt(-300, -100);
-    if(xs.indexOf(x) === -1) xs.push(x);
-  }
-
   const ys = []
-  while(ys.length < zombiesNum){
-    const y = getRandomInt(-11, 15);
-    if(ys.indexOf(y) === -1) ys.push(y);
+  while(xs.length < zombiesNum){
+    const x = getRandomInt(-1000, -100);
+    if(xs.indexOf(x) === -1) xs.push(x);
+    ys.push(getRandomInt(-15, 15));
   }
   ys.sort()
 
@@ -75,7 +71,7 @@ class Zombie {
       if(zombies.length === 0){
         clearInterval(shuffle)
       }
-    }, 50)
+    }, 100)
   }, error => {
     console.warn('Error:', error)
   })
