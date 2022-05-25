@@ -1,10 +1,32 @@
-
-
-
+class Zombie {
+  constructor(images, x, y){
+    this.images = images
+    this.step = this.getRandomInt(0, images.length)
+    this.x = this.getRandomInt(x[0], x[1])
+    this.y = this.getRandomInt(y[0], y[1])
+    this.steps = [2, 2, 3, 7, 6, 1, 1, 1]
+  }
+  getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min
+  }
+  getFrame() {
+    const frame = {
+      image: this.images[this.step % this.images.length],
+      x: this.x,
+      y: this.y
+    }
+    this.step += 1
+    this.x += this.steps[(this.step % this.images.length)]
+    return frame
+  }
+}
 
 (() => {
+  const zombies = []
+  const zombiesNum = 120
 
-  const populateImageArray = src => Array.from({length: 8}, (_, i) => i + 1).map(n => `${src}/frame_${(n).toString().padStart(2, '0')}.png`)
+  const populateImageArray = src => Array.from({length: 8}, (_, i) => i + 1)
+    .map(n => `${src}/frame_${(n).toString().padStart(2, '0')}.png`)
   const canvas = document.getElementById("canvas");
   const context = canvas.getContext('2d');
   let images
@@ -25,25 +47,27 @@
 
   preloadImages(populateImageArray('../images/zombie_01')).then(function(imgArr) {
     images = imgArr
-    setInterval(shuffle, 150);
-  }, error => {
-    console.log('Error:', error)
-  })
-
-  let index = 0
-  let x = -27
-  const steps = [2,2,3,7,6,1,1,1]
-
-  function shuffle() {
-    context.fillStyle = 'white';
-    context.fillRect(0,0,canvas.width,canvas.height);
-    context.drawImage(images[index % images.length], x, 0)
-    index += 1
-    x += steps[(index % images.length)]
-    if(x === 580){
-      clearInterval(shuffle)
+    for(let i = 9; i < zombiesNum; i++){
+      zombies.push(new Zombie(images, [-1000, -100], [-100, 100]))
     }
-  }
+    zombies.sort((a, b) => a.y - b.y)
+    const shuffle = setInterval(function(){
+      context.fillStyle = 'white';
+      context.fillRect(0,0,canvas.width,canvas.height);
+      zombies.forEach((zombie, index) => {
+        const frame = zombie.getFrame()
+        context.drawImage(frame.image, frame.x, frame.y)
+        if(frame.x > 600){
+          zombies.splice(index, 1)
+        }
 
+      })
+      if(zombies.length === 0){
+        clearInterval(shuffle)
+      }
+    }, 100)
+  }, error => {
+    console.warn('Error:', error)
+  })
 
 })()
