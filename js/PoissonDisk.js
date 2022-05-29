@@ -2,7 +2,6 @@
  * Converted from https://github.com/jeffrey-hearn/poisson-disk-sample/blob/master/poisson-disk.js
  */
 
-
 Array.prototype.remove = function(from, to) {
   const rest = this.slice((to || from) + 1 || this.length);
   this.length = from < 0 ? this.length + from : from;
