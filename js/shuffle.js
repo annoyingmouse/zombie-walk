@@ -19,10 +19,56 @@ import {Zombie} from './Zombie.js'
     "../images/zombie_06/manifest.json"
   ]
 
+  const shuffle = setInterval(function(){
+    context.fillStyle = 'white';
+    context.fillRect(0,0,canvas.width,canvas.height);
+    zombies.forEach((zombie, index) => {
+      zombie.draw(context)
+      if(zombie.x > (canvas.width + 50)){
+        zombies.splice(index, 1)
+      }
+    })
+    if(zombies.length === 0){
+      clearInterval(shuffle)
+      context.fillStyle = 'white';
+      context.fillRect(0,0,canvas.width,canvas.height);
+      console.info('All done!')
+    }
+  }, timeout)
+
+
+  async function processMyArray(manifestArray) {
+    const result = [];
+    for(const manifest of manifestArray){
+      result.push(await fetch(manifest)
+          .then(response => response.json())
+          .then(async function(json) {
+            json.root = json.location.split('/')[2]
+            json.imgs = await processImages(Array.from({length: json.imageNumber}, (_, i) => i + 1).map(n => `${json.location}frame_${(n).toString().padStart(2, '0')}.png`))
+            return json
+          }));
+    }
+    return result;
+  }
+
+  async function processImages(imageArray) {
+    const result = [];
+    for(const image of imageArray){
+      const img = new Image()
+      img.onload = () => result.push(img);
+      img.src = image
+    }
+    return result;
+  }
+
+  processMyArray(zombieManifests).then(arr => {
+    console.log(arr)
+  })
+
   zombieManifests.forEach(url => list.push(
-        fetch(url)
-            .then(response => response.json())
-            .then(json => zombieMetaData.push((json))))
+      fetch(url)
+          .then(response => response.json())
+          .then(json => zombieMetaData.push((json))))
   )
   Promise
       .all(list)
@@ -30,6 +76,7 @@ import {Zombie} from './Zombie.js'
         retrieveImages()
         list = []
       });
+
 
   function processAsync(src, root, number) {
     return new Promise(function(resolve, reject) {
@@ -70,22 +117,11 @@ import {Zombie} from './Zombie.js'
         }
       }
       zombies.sort((a, b) => a.y - b.y)
-      const shuffle = setInterval(function(){
-        context.fillStyle = 'white';
-        context.fillRect(0,0,canvas.width,canvas.height);
-        zombies.forEach((zombie, index) => {
-          zombie.draw(context)
-          if(zombie.x > (canvas.width + 20)){
-            zombies.splice(index, 1)
-          }
-        })
-        if(zombies.length === 0){
-          clearInterval(shuffle)
-          context.fillStyle = 'white';
-          context.fillRect(0,0,canvas.width,canvas.height);
-          console.info('All done!')
-        }
-      }, timeout)
+      shuffle()
     }).catch(() => {})
   }
+
+
+
+
 })()
