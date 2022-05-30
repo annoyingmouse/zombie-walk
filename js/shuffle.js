@@ -1,16 +1,13 @@
 import {PoissonDiskSampler} from './PoissonDisk.js'
 import {Zombie} from './Zombie.js'
 
-(() => {
+(async () => {
   const zombies = []
   const canvas = document.getElementById("canvas");
   const context = canvas.getContext('2d');
   const sampler = new PoissonDiskSampler(canvas.width, canvas.height, 30, 30 );
   const zombiesNum = sampler.sampleUntilSolution();
   const timeout = 200
-
-  const zombieMetaData = []
-  let list = []
   const zombieManifests = [
     "../images/zombie_02/manifest.json",
     "../images/zombie_03/manifest.json",
@@ -18,7 +15,6 @@ import {Zombie} from './Zombie.js'
     "../images/zombie_05/manifest.json",
     "../images/zombie_06/manifest.json"
   ]
-
   const shuffle = setInterval(function(){
     context.fillStyle = 'white';
     context.fillRect(0,0,canvas.width,canvas.height);
@@ -35,93 +31,35 @@ import {Zombie} from './Zombie.js'
       console.info('All done!')
     }
   }, timeout)
-
-
   async function processMyArray(manifestArray) {
     const result = [];
     for(const manifest of manifestArray){
-      result.push(await fetch(manifest)
-          .then(response => response.json())
-          .then(async function(json) {
-            json.root = json.location.split('/')[2]
-            json.imgs = await processImages(Array.from({length: json.imageNumber}, (_, i) => i + 1).map(n => `${json.location}frame_${(n).toString().padStart(2, '0')}.png`))
-            return json
-          }));
+      const json = await fetch(manifest)
+        .then(response => response.json())
+        .then(async function(json) {
+          json.images = await processImages(Array.from({length: json.imageNumber}, (_, i) => i + 1).map(n => `${json.location}frame_${(n).toString().padStart(2, '0')}.png`))
+          return json
+        })
+      result.push(json);
     }
     return result;
   }
-
   async function processImages(imageArray) {
     const result = [];
-    for(const image of imageArray){
+    for(let i = 0; i < imageArray.length; i++){
       const img = new Image()
-      img.onload = () => result.push(img);
-      img.src = image
+      img.onload = () => result[i] = img
+      img.src = imageArray[i]
     }
     return result;
   }
-
-  processMyArray(zombieManifests).then(arr => {
-    console.log(arr)
-  })
-
-  zombieManifests.forEach(url => list.push(
-      fetch(url)
-          .then(response => response.json())
-          .then(json => zombieMetaData.push((json))))
-  )
-  Promise
-      .all(list)
-      .then(() => {
-        retrieveImages()
-        list = []
-      });
-
-
-  function processAsync(src, root, number) {
-    return new Promise(function(resolve, reject) {
-      const img = new Image()
-      img.dataset.number = number
-      img.dataset.root = root
-      img.onload = () => resolve(img)
-      img.onerror = img.onabort = () => reject(src)
-      img.src = src
-    });
+  const objects = await processMyArray(zombieManifests)
+  for(const prop in zombiesNum){
+    if (zombiesNum.hasOwnProperty(prop)) {
+      const position = zombiesNum[prop]
+      const zombie = objects[Math.floor(Math.random() * objects.length)]
+      zombies.push(new Zombie(zombie.images, position.x - (canvas.width + 50), position.y - 30, zombie.steps, zombie.lurch, Math.floor(Math.random() * zombie.images.length)))
+    }
   }
-
-  const retrieveImages = () => {
-    zombieMetaData.forEach(zombie => {
-      zombie.srcs = Array.from({length: zombie.imageNumber}, (_, i) => i + 1).map(n => `${zombie.location}frame_${(n).toString().padStart(2, '0')}.png`)
-      zombie.root = zombie.location.split('/')[2]
-      zombie.imgs = []
-    })
-    Promise.all(zombieMetaData.map(function(entity, index){
-      return Promise.all(entity.srcs.map(function(item){
-        const bits = item.split('/')
-        const root = bits[2]
-        const frameNumber = parseInt(bits.pop().split('.')[0].split('_')[1], 10)
-        return processAsync(item, root, frameNumber);
-      }))
-    })).then(function(data) {
-      data.forEach(imgArr => {
-        imgArr.forEach(img => {
-          const target = zombieMetaData.find(obj => obj.root === img.dataset.root)
-          target.imgs[Number(img.dataset.number) -1] = img
-        })
-      })
-      for(const prop in zombiesNum){
-        if (zombiesNum.hasOwnProperty(prop)) {
-          const position = zombiesNum[prop]
-          const zombie = zombieMetaData[Math.floor(Math.random() * zombieMetaData.length)]
-          zombies.push(new Zombie(zombie.imgs, position.x - (canvas.width + 50), position.y - 30, zombie.steps, zombie.lurch))
-        }
-      }
-      zombies.sort((a, b) => a.y - b.y)
-      shuffle()
-    }).catch(() => {})
-  }
-
-
-
-
+  zombies.sort((a, b) => a.y - b.y)
 })()
