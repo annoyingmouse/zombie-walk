@@ -12,12 +12,12 @@ export class Zombie {
   }
   getFrame() {
     const frame = {
-      image: this.images[this.step % this.images.length],
+      image: this.images[this.step],
       x: this.x,
-      y: this.y += this.lurch[this.step % this.images.length]
+      y: this.y += this.lurch[this.step]
     }
-    this.x += this.steps[this.step % this.images.length]
-    this.step += 1
+    this.x += this.steps[this.step]
+    this.step = (this.step + 1) >= this.images.length ? 0 : this.step + 1
     return frame
   }
   draw(context) {

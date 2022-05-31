@@ -1,5 +1,4 @@
 {
-  "name": "Zombie 2",
   "location": "../images/zombie_02/",
   "imageNumber": 4,
   "steps": [5, 3, 6, 5],
