@@ -10,7 +10,7 @@ import {Zombie} from './Zombie.js'
   const sampler = new PoissonDiskSampler(canvas.width, canvas.height, 30, 30 );
   const zombiesNum = sampler.sampleUntilSolution();
 
-  const timeout = 100
+  const timeout = 200
 
   const zombieManifests = [
     //'../images/zombie_01/manifest.json',
@@ -66,10 +66,9 @@ import {Zombie} from './Zombie.js'
       const json = await fetch(manifest)
         .then(response => response.json())
         .then(async json => {
-          const urls = Array.from({length: json.imageNumber}, (_, i) => i + 1).map(n => `${json.location}frame_${(n).toString().padStart(2, '0')}.png`)
-          delete json.imageNumber // We don't need these anymore
-          delete json.location // We don't need these anymore
-          json.images = await loadImages(urls)
+          json.images = await loadImages(Array.from({length: json.imageNumber}, (_, i) => i + 1).map(n => `${json.location}frame_${(n).toString().padStart(2, '0')}.png`))
+          delete json.imageNumber // We don't need this anymore
+          delete json.location    // Or this
           return json
         })
       result.push(json);
