@@ -1,5 +1,6 @@
 export class Zombie {
   constructor(images, x, y, steps, lurch, step) {
+    this.height = images[0].height
     this.images = images
     this.step = step == null ? this.getRandomInt(0, images.length): step
     this.x = Array.isArray(x) ? this.getRandomInt(x[0], x[1]) : x

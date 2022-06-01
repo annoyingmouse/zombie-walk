@@ -10,14 +10,15 @@ import {Zombie} from './Zombie.js'
   const sampler = new PoissonDiskSampler(canvas.width, canvas.height, 30, 30 );
   const zombiesNum = sampler.sampleUntilSolution();
 
-  const timeout = 200
+  const timeout = 100
 
   const zombieManifests = [
-    "../images/zombie_02/manifest.json",
-    "../images/zombie_03/manifest.json",
-    "../images/zombie_04/manifest.json",
-    "../images/zombie_05/manifest.json",
-    "../images/zombie_06/manifest.json"
+    //'../images/zombie_01/manifest.json',
+    '../images/zombie_02/manifest.json',
+    '../images/zombie_03/manifest.json',
+    '../images/zombie_04/manifest.json',
+    '../images/zombie_05/manifest.json',
+    '../images/zombie_06/manifest.json'
   ]
 
   const shuffle = setInterval(function(){
@@ -36,34 +37,47 @@ import {Zombie} from './Zombie.js'
       console.info('All done!')
     }
   }, timeout)
-  
+
+  const getImage = url => (
+    new Promise((resolve, reject) => {
+      const image = new Image()
+      image.onload = e => {
+        resolve(image)
+      }
+      image.onerror = e => {
+        reject(Error("Network Error"))
+      }
+      image.src = url
+    })
+  )
+
+  const loadImages = async (images) => {
+    const returnArray = []
+    for(let i = 0; i < images.length; i++){
+      const result = await getImage(images[i])
+      returnArray.push(result)
+    }
+    return returnArray
+  }
+
   const processMyArray = async (manifestArray) => {
     const result = [];
     for(const manifest of manifestArray){
       const json = await fetch(manifest)
         .then(response => response.json())
-        .then(async function(json) {
-          json.images = await processImages(Array.from({length: json.imageNumber}, (_, i) => i + 1).map(n => `${json.location}frame_${(n).toString().padStart(2, '0')}.png`))
-          delete json.imageNumber
-          delete json.location
+        .then(async json => {
+          const urls = Array.from({length: json.imageNumber}, (_, i) => i + 1).map(n => `${json.location}frame_${(n).toString().padStart(2, '0')}.png`)
+          delete json.imageNumber // We don't need these anymore
+          delete json.location // We don't need these anymore
+          json.images = await loadImages(urls)
           return json
         })
       result.push(json);
     }
     return result;
   }
-  
-  const processImages = async (imageArray) => {
-    const result = [];
-    for(let i = 0; i < imageArray.length; i++){
-      const img = new Image()
-      img.onload = () => result[i] = img
-      img.src = imageArray[i]
-    }
-    return result;
-  }
+
   const zombieObjectArray = await processMyArray(zombieManifests)
-  console.log(zombieObjectArray)
 
   for(const prop in zombiesNum){
     if (zombiesNum.hasOwnProperty(prop)) {
@@ -73,5 +87,6 @@ import {Zombie} from './Zombie.js'
     }
   }
 
-  zombies.sort((a, b) => a.y - b.y)
+  // sort out pseudo z-index
+  zombies.sort((a, b) => (a.y + a.height) - (b.y + b.height))
 })()
